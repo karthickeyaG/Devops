@@ -1,7 +1,10 @@
 # Devops
 This repository is created for devops practice
+<br>
 Git commands
+<br>
 git add (filename) 
+<br>
 git commit -m "message for commit"
 git pull
 git push
