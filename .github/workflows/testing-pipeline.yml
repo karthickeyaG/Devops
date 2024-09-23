@@ -1,0 +1,58 @@
+name: Terraform Deployment feature test
+
+on:
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: 'Select CSP for deployment'
+        required: true
+        type: choice
+        options:
+          - azure
+          - aws
+          - gcp
+
+jobs:
+  terraform:
+    name: Deploy infrastructure with Terraform
+    runs-on: ubuntu-latest
+    env:
+      # These environment variables will come from GitHub Secrets
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      # Azure deployment
+      - name: Deploy to Azure
+        if: ${{ github.event.inputs.provider == 'azure' }}
+        run: |
+          terraform init -backend-config=azure-backend.tfvars
+          terraform plan -var-file="azure.tfvars"
+          terraform apply -auto-approve
+
+      # AWS deployment
+      - name: Deploy to AWS
+        if: ${{ github.event.inputs.provider == 'aws' }}
+        run: |
+          terraform init -backend-config=aws-backend.tfvars
+          terraform plan -var-file="aws.tfvars"
+          terraform apply -auto-approve
+
+      # GCP deployment
+      - name: Deploy to GCP
+        if: ${{ github.event.inputs.provider == 'gcp' }}
+        run: |
+          terraform init -backend-config=gcp-backend.tfvars
+          terraform plan -var-file="gcp.tfvars"
+          terraform apply -auto-approve
