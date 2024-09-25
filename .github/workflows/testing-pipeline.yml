@@ -1,4 +1,4 @@
-name: Terraform Deployment feature test
+name: Multi-CSP Test Terraform Deploy
 
 on:
   push:
@@ -17,46 +17,22 @@ on:
           - gcp
 
 jobs:
-  terraform:
-    name: Deploy infrastructure with Terraform
+  terraform-deploy:
     runs-on: ubuntu-latest
-    env:
-      # These environment variables will come from GitHub Secrets
-      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-      ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
-    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup Terraform
+      - uses: actions/checkout@v3
+      - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
-
-      # Azure deployment
-      - name: Deploy to Azure
-        if: ${{ github.event.inputs.provider == 'azure' }}
+        with:
+          terraform_version:   
+                           '1.3.5'  # Adjust version as needed
+      - name: Configure Terraform Provider
         run: |
-          terraform init -backend-config=azure-backend.tfvars
-          terraform plan -var-file="azure.tfvars"
-          terraform apply -auto-approve
-
-      # AWS deployment
-      - name: Deploy to AWS
-        if: ${{ github.event.inputs.provider == 'aws' }}
+          terraform init
+          terraform workspace new ${{ github.ref_name }}
+          terraform config set-backend-config "key" "your_state_storage_key"
+          terraform config set-backend-config "bucket" "your_state_storage_bucket"
+          terraform config set-backend-config "region" "your_state_storage_region"
+      - name: Apply Terraform Configuration
         run: |
-          terraform init -backend-config=aws-backend.tfvars
-          terraform plan -var-file="aws.tfvars"
-          terraform apply -auto-approve
-
-      # GCP deployment
-      - name: Deploy to GCP
-        if: ${{ github.event.inputs.provider == 'gcp' }}
-        run: |
-          terraform init -backend-config=gcp-backend.tfvars
-          terraform plan -var-file="gcp.tfvars"
-          terraform apply -auto-approve
+          terraform apply -auto-approve -var "provider" "${{ inputs.provider }}"
