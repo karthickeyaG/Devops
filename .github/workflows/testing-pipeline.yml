@@ -1,0 +1,38 @@
+name: Multi-CSP Test Terraform Deploy
+
+on:
+  push:
+    branches:
+      - develop
+      - feature/*
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: 'Select CSP for deployment'
+        required: true
+        type: choice
+        options:
+          - azure
+          - aws
+          - gcp
+
+jobs:
+  terraform-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version:   
+                           '1.3.5'  # Adjust version as needed
+      - name: Configure Terraform Provider
+        run: |
+          terraform init
+          terraform workspace new ${{ github.ref_name }}
+          terraform config set-backend-config "key" "your_state_storage_key"
+          terraform config set-backend-config "bucket" "your_state_storage_bucket"
+          terraform config set-backend-config "region" "your_state_storage_region"
+      - name: Apply Terraform Configuration
+        run: |
+          terraform apply -auto-approve -var "provider" "${{ inputs.provider }}"
