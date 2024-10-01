@@ -1,10 +1,21 @@
 name: Multi-CSP Test Terraform Deploy
 
+# on:
+#   push:
+#     branches:
+#       - develop
+#       - feature/*
+#   workflow_dispatch:
+#     inputs:
+#       provider:
+#         description: 'Select CSP for deployment'
+#         required: true
+#         type: choice
+#         options:
+#           - azure
+#           - aws
+#           - gcp
 on:
-  push:
-    branches:
-      - develop
-      - feature/*
   workflow_dispatch:
     inputs:
       provider:
@@ -15,6 +26,13 @@ on:
           - azure
           - aws
           - gcp
+      action:
+        description: 'Choose action (apply/destroy)'
+        required: true
+        type: choice
+        options:
+          - apply
+          - destroy
 
 jobs:
   terraform-deploy:
